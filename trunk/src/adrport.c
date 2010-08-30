@@ -1,9 +1,10 @@
-/// adrport.c - Serial Port Handler
-// Copyright SPORTPLEX, SPORTPLEX by Sportplex Incorporated
-
-// Permission is hereby granted to freely copy,
-// modify, utilize and distribute this example in
-// whatever manner you desire without restriction.
+//============================================================================
+// Name        : adrport.c
+// Author      : Pavel Bakhmetiev
+// Version     : 1.0
+// Copyright   : Sportplex 2010 Copyright
+// Description : GATE control program in C, Ansi-style
+//============================================================================
 
 #include <stdio.h>
 #include <unistd.h>
@@ -14,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 #include "adrport.h"
+//#include "loger.h"
 static int fd = 0;
 
 // opens the serial port
@@ -22,10 +24,11 @@ static int fd = 0;
 //   -1 = open failed
 int OpenAdrPort(char* sPortNumber)
 {
+	char sMessage[254];
     char sPortName[64];
-    printf("in OpenAdrPort port#=%s\n", sPortNumber);
     sprintf(sPortName, "/dev/ttyACM%s", sPortNumber);
-    printf("sPortName=%s\n", sPortName);
+    sprintf(sMessage, "sPortName=%s", sPortName);
+//	log_message(LOGFILE, sMessage);
 
     // make sure port is closed
     CloseAdrPort(fd);
@@ -33,20 +36,13 @@ int OpenAdrPort(char* sPortNumber)
     fd = open(sPortName, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd < 0)
     {
-        printf("open error %d %s\n", errno, strerror(errno));
+        sprintf(sMessage, "open error %d %s", errno, strerror(errno));
+//		log_message(LOGFILE, sMessage);
     }
     else
     {
         struct termios my_termios;
-        printf("fd is %d\n", fd);
         tcgetattr(fd, &my_termios);
-        // NOTE: you may want to save the port attributes
-        //       here so that you can restore them later
-        printf("old cflag=%08x\n", my_termios.c_cflag);
-        printf("old oflag=%08x\n", my_termios.c_oflag);
-        printf("old iflag=%08x\n", my_termios.c_iflag);
-        printf("old lflag=%08x\n", my_termios.c_lflag);
-        printf("old line=%02x\n", my_termios.c_line);
 
         tcflush(fd, TCIFLUSH);
 
@@ -55,11 +51,6 @@ int OpenAdrPort(char* sPortNumber)
         cfsetospeed(&my_termios, B9600);
         tcsetattr(fd, TCSANOW, &my_termios);
 
-        printf("new cflag=%08x\n", my_termios.c_cflag);
-        printf("new oflag=%08x\n", my_termios.c_oflag);
-        printf("new iflag=%08x\n", my_termios.c_iflag);
-        printf("new lflag=%08x\n", my_termios.c_lflag);
-        printf("new line=%02x\n", my_termios.c_line);
     } // end if
     return fd;
 } // end OpenAdrPort
@@ -71,20 +62,23 @@ int OpenAdrPort(char* sPortNumber)
 int WriteAdrPort(char* psOutput)
 {
     int iOut;
+	char sMessage[254];
     if (fd < 1)
     {
-        printf(" port is not open\n");
+//		log_message(LOGFILE, " port is not open");
         return -1;
     } // end if
     iOut = write(fd, psOutput, strlen(psOutput));
     if (iOut < 0)
     {
-        printf("write error %d %s\n", errno, strerror(errno));
-    }
-    else
-    {
-    	printf("wrote %d chars: %s\n", iOut, psOutput);
-    } // end if
+        sprintf(sMessage, "write error %d %s", errno, strerror(errno));
+//		log_message(LOGFILE, sMessage);
+   }
+ //   else
+ //   {
+ //       sprintf(sMessage, "wrote %d chars: %s", iOut, psOutput);
+//		log_message(LOGFILE, sMessage);
+//    } // end if
     return iOut;
 } // end WriteAdrPort
 
@@ -95,35 +89,27 @@ int WriteAdrPort(char* psOutput)
 int ReadAdrPort(char* psResponse, int iMax)
 {
     int iIn;
-    printf("in ReadAdrPort iMax=%d\n", iMax);
+	char sMessage[254];
 
     if (fd < 1)
     {
-        printf(" port is not open\n");
+//    	log_message(LOGFILE, " port is not open");
         return -1;
     } // end if
 
-    strncpy (psResponse, "N/A", iMax<4?iMax:4);
-    printf("psResponse: %s\n", psResponse);
-
     iIn = read(fd, psResponse, iMax-1);
-    printf("read %d chars: %s\n", iIn, psResponse);
-    if (iIn < 0)
+   if (iIn < 0)
     {
     	if (errno == EAGAIN)
-    	{
     		return 0; // assume that command generated no response
-		}
 		else
 		{
-			printf("read error %d %s\n", errno, strerror(errno));
+		    sprintf(sMessage, "read error %d %s", errno, strerror(errno));
+//			log_message(LOGFILE, sMessage);
 		} // end if
     }
     else
-    {
-    	psResponse[iIn<iMax?iIn:iMax] = '\0';
-	    printf("read %d chars: %s\n", iIn, psResponse);
-    } // end if
+     	psResponse[iIn<iMax?iIn:iMax] = '\0';
 
     return iIn;
 } // end ReadAdrPort
@@ -133,7 +119,6 @@ void CloseAdrPort()
 {
 	// you may want to restore the saved port attributes
     if (fd > 0)
-    {
         close(fd);
-    } // end if
+
 } // end CloseAdrPort
