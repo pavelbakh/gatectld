@@ -125,7 +125,7 @@
 #define STDC_HEADERS 1
 
 /* SVN revision */
-#define SVN_REVISION "exported"
+#define SVN_REVISION "3"
 
 /* Version number of package */
 #define VERSION "0.0.1"
